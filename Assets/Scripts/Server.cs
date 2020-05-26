@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -71,5 +72,69 @@ public class Server : Singleton<Server>
         TextAsset textValue = resourceRequest.asset as TextAsset;
 
         onRequestCompleted(textValue.text);
+    }
+
+    public IEnumerator DownloadAssetBundleAsync(string url, Action<AssetBundle> onRequestCompleted, Action<int, string> onRequestFailed)
+    {
+        UnityWebRequest request = UnityWebRequestAssetBundle.GetAssetBundle(url);
+
+        yield return request.SendWebRequest();
+
+        var asyncOperation = request.SendWebRequest();
+        AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(request);
+
+        //Simulate Delay
+        yield return new WaitForSeconds(1);
+
+        //  Comprobamos si es error o acierto para ejecutar los callback
+        if (request.isNetworkError || request.isHttpError)  //  Si hay error
+        {
+            if (onRequestFailed != null)
+                onRequestFailed.Invoke(Convert.ToInt32(request.responseCode), request.downloadHandler.text);
+        }
+        else  //    Si no hay error
+        {
+            if (onRequestCompleted != null)
+                onRequestCompleted.Invoke(bundle);
+        }
+    }
+
+    public IEnumerator DownloadFileAsync(Action<ulong> onRequestCompleted, Action<int, string> onRequestFailed)
+    {
+        string url = "http://dl3.webmfiles.org/big-buck-bunny_trailer.webm";
+
+        string vidSavePath = Path.Combine(Application.persistentDataPath, "Videos");
+        vidSavePath = Path.Combine(vidSavePath, "MyVideo.webm");
+
+        //Create Directory if it does not exist
+        if (!Directory.Exists(Path.GetDirectoryName(vidSavePath)))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(vidSavePath));
+        }
+
+        var uwr = new UnityWebRequest(url);
+        uwr.method = UnityWebRequest.kHttpVerbGET;
+        var dh = new DownloadHandlerFile(vidSavePath);
+        dh.removeFileOnAbort = true;
+        uwr.downloadHandler = dh;
+
+        yield return uwr.SendWebRequest();
+
+        //  Comprobamos si es error o acierto para ejecutar los callback
+        if (uwr.isNetworkError || uwr.isHttpError)  //  Si hay error
+        {
+            if (onRequestFailed != null)
+                onRequestFailed.Invoke(Convert.ToInt32(uwr.responseCode), uwr.downloadHandler.text);
+        }
+        else  //    Si no hay error
+        {
+            if (onRequestCompleted != null)
+                onRequestCompleted.Invoke(uwr.downloadedBytes);
+        }
+
+        if (uwr.isNetworkError || uwr.isHttpError)
+            Debug.Log(uwr.error);
+        else
+            Debug.Log("Download saved to: " + vidSavePath.Replace("/", "\\") + "\r\n" + uwr.error);
     }
 }

@@ -26,6 +26,26 @@ public class QuestionManager : MonoBehaviour
         GetQuestionsFromResources();
     }
 
+    private void GetAssetBundleFromServerUrl()
+    {
+        Server.Instance.DownloadAssetBundleAsync("", onRequestCompleted, onRequestFaile);
+    }
+
+    private void onRequestFaile(int arg1, string arg2)
+    {
+        
+    }
+
+    private void onRequestCompleted(AssetBundle bundle)
+    {
+        GameObject engineObj = bundle.LoadAsset<GameObject>("EngineAssetBundle");
+        AnimationClip anim = bundle.LoadAsset<AnimationClip>("EngineAssetBundle");
+
+        Debug.Log("AssetBundle " + anim.name);
+
+        Instantiate(engineObj);
+    }
+
     /// <summary>
     /// TODO: Should get all the questions from the server
     /// </summary>
