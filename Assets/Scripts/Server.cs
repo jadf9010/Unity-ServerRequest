@@ -74,6 +74,29 @@ public class Server : Singleton<Server>
         onRequestCompleted(textValue.text);
     }
 
+    public IEnumerator DownloadFromGenericResourcesAsync<T>(string fileName, Action<ResourceRequest> onRequestCompleted, Action<string> onRequestFailed) where T : UnityEngine.Object
+    {
+        var resourceRequest = Resources.LoadAsync<T>(fileName);
+
+        yield return resourceRequest;
+
+        //Simulate Delay
+        yield return new WaitForSeconds(1);
+
+        //We check if it's a mistake or a success to execute the callbacks
+        if (resourceRequest == null)  //  If there is a mistake
+        {
+            onRequestFailed.Invoke("Resources Download Failed");
+        }
+        else  //if it's a success download
+        {
+            onRequestCompleted?.Invoke(resourceRequest);
+        }
+
+        //if(typeof(T) == typeof(TextAsset))
+        //if(typeof(T) == typeof(TextAsset))
+    }
+
     public IEnumerator DownloadAssetBundleAsync(string url, Action<AssetBundle> onRequestCompleted, Action<int, string> onRequestFailed)
     {
         UnityWebRequest request = UnityWebRequestAssetBundle.GetAssetBundle(url);
